@@ -18,7 +18,7 @@ import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 VERIFIED = "verified"
 UNCHECKED = "unchecked"        # declared an estimate or a hypothesis; no check supplied
@@ -156,7 +156,8 @@ def _resolve(root: Path, rel) -> Path:
     if not isinstance(rel, str) or not rel:
         raise _Reject("path must be a non-empty string")
     p = Path(rel)
-    if p.is_absolute() or p.drive:
+    win = PureWindowsPath(rel)  # C:/x and \x are absolute on Windows only; reject them on every platform
+    if p.is_absolute() or p.drive or win.is_absolute() or win.drive or rel.startswith(("/", "\\")):
         raise _Reject(f"path must be relative to the workspace: {rel}")
     base, full = root.resolve(), (root / p).resolve()
     if base != full and base not in full.parents:
